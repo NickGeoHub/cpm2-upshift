@@ -67,7 +67,10 @@ import argparse
 import numpy as np
 from PIL import Image, ImageDraw
 import matplotlib.pyplot as plt
-
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 # ============================================================
 # EDIT THESE per screenshot
@@ -86,10 +89,10 @@ CROP_BOX = (360, 300, 1700, 900)
 
 # The RPM values the x-axis gridlines show, left to right.
 # RPM_GRIDLINE_VALUES = [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000]
-RPM_GRIDLINE_VALUES = [i for i in range(0, 8000+1, 1000)]
+RPM_GRIDLINE_VALUES = [i for i in range(0, 11000+1, 1000)]
 
 # The values the y-axis gridlines show, top to bottom.
-VALUE_GRIDLINE_VALUES = [i for i in range(500,-1,-100)]
+VALUE_GRIDLINE_VALUES = [i for i in range(900,-1,-100)]
 
 # Curve-free pixel bands (relative to the CROPPED image) used to detect
 # gridlines without curve interference. X band = a row range near the
@@ -124,6 +127,27 @@ SAMPLE_STEP_RPM = args.step
 # ============================================================
 # shouldn't need to touch below here
 # ============================================================
+
+def open_file_cross_platform(path: Path):
+    path = str(path.resolve())
+
+    # Suppress any stdout/stderr the opener might emit
+    DEVNULL = subprocess.DEVNULL
+
+    if sys.platform.startswith("win"):
+        # start is a shell built-in; use cmd /c start
+        # "" = window title placeholder
+        subprocess.Popen(["cmd", "/c", "start", "", path],
+                         stdout=DEVNULL, stderr=DEVNULL)
+
+    elif sys.platform == "darwin":
+        subprocess.Popen(["open", path],
+                         stdout=DEVNULL, stderr=DEVNULL)
+
+    else:
+        subprocess.Popen(["xdg-open", path],
+                         stdout=DEVNULL, stderr=DEVNULL)
+
 
 def is_gridline_gray(r, g, b):
     return abs(r - g) < 20 and abs(g - b) < 20 and 100 < r < 230
@@ -245,9 +269,14 @@ def get_dyno_data(image_path: str,
                   crop_box: tuple[int] = CROP_BOX):
     full_img = Image.open(image_path).convert("RGB")
     img = full_img.crop(crop_box)
-    img.save("debug_crop.png")
-
+    crop_path = Path("debug_crop.png")
+    img.save(crop_path.resolve())
     arr = np.array(img).astype(int)
+
+    open_file_cross_platform(crop_path)
+    global RPM_GRIDLINE_VALUES, VALUE_GRIDLINE_VALUES
+    RPM_GRIDLINE_VALUES = [i for i in range(0, int(input("what is Max value of RPM Axis? "))+1, 1000)]
+    VALUE_GRIDLINE_VALUES = [i for i in range(int(input("what is Max value of Torque Axis? ")),-1,-100)]
 
     x_px = find_gridlines(arr, 'x', X_GRIDLINE_DETECT_ROWS, RPM_GRIDLINE_VALUES)
     y_px = find_gridlines(arr, 'y', Y_GRIDLINE_DETECT_COLS, VALUE_GRIDLINE_VALUES)
