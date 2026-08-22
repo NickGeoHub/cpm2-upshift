@@ -89,10 +89,10 @@ CROP_BOX = (360, 300, 1700, 900)
 
 # The RPM values the x-axis gridlines show, left to right.
 # RPM_GRIDLINE_VALUES = [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000]
-RPM_GRIDLINE_VALUES = [i for i in range(0, 11000+1, 1000)]
+# RPM_GRIDLINE_VALUES = [i for i in range(0, 11000+1, 1000)]
 
 # The values the y-axis gridlines show, top to bottom.
-VALUE_GRIDLINE_VALUES = [i for i in range(900,-1,-100)]
+# VALUE_GRIDLINE_VALUES = [i for i in range(900,-1,-100)]
 
 # Curve-free pixel bands (relative to the CROPPED image) used to detect
 # gridlines without curve interference. X band = a row range near the
@@ -100,8 +100,12 @@ VALUE_GRIDLINE_VALUES = [i for i in range(900,-1,-100)]
 # column range near the LEFT edge, before either curve starts. If the
 # gridline count warning fires, look at the saved debug image and move
 # these to a spot the curves don't touch in your screenshot.
-X_GRIDLINE_DETECT_ROWS = (65, 175)
-Y_GRIDLINE_DETECT_COLS = (175, 200)
+
+#                        top, bottom
+X_GRIDLINE_DETECT_ROWS = (70, 80)
+
+#                        left, right
+Y_GRIDLINE_DETECT_COLS = (110, 140)
 
 SAMPLE_STEP_RPM = 100     # how finely to sample the traced curves
 MAX_GAP_PX = 10           # a bigger gap than this = stop trusting that curve past it
@@ -187,7 +191,12 @@ def find_gridlines(arr, axis, band, expected_values):
             cur = [v]
     clusters.append(sum(cur) / len(cur))
 
+
+
     if len(clusters) != len(expected_values):
+        print("clusters:", clusters)
+        print("cluster count:", len(clusters))
+        print("expected count:", len(expected_values))
         raise RuntimeError(
             f"Found {len(clusters)} {axis}-axis gridlines but expected {len(expected_values)} "
             f"(from {'RPM' if axis == 'x' else 'VALUE'}_GRIDLINE_VALUES). Check debug_crop.png "
@@ -250,6 +259,31 @@ def trace_curve(arr, classifier, max_jump=30):
     return points
 
 
+def fill_hidden_gaps(curve_points, other_curve_points, max_gap=30):
+    """
+    Fills gaps in curve_points using other_curve_points' value at the
+    same x -- for the case where the yellow (torque) line gets covered
+    by the red (power) line where they cross, so yellow's real pixels
+    just aren't there to read. Assumes yellow sits right under red at
+    that spot, which is the best guess available when it's hidden.
+
+    Only fills gaps up to max_gap pixels wide, so it doesn't wrongly
+    borrow red's data across a big, unrelated gap (like the near-redline
+    dropout) -- that should stay a real gap, not get papered over.
+    """
+    if not curve_points:
+        return curve_points
+    xs = sorted(curve_points)
+    filled = dict(curve_points)
+    for i in range(len(xs) - 1):
+        gap = xs[i + 1] - xs[i]
+        if 1 < gap <= max_gap:
+            for x in range(xs[i] + 1, xs[i + 1]):
+                if x in other_curve_points:
+                    filled[x] = other_curve_points[x]
+    return filled
+
+
 def reliable_range(curve, max_gap):
     """Returns (first_x, last_x_before_first_big_gap). A screenshot's
     curve sometimes has a short break (colors overlapping at a crossing
@@ -276,7 +310,9 @@ def get_dyno_data(image_path: str,
     open_file_cross_platform(crop_path)
     global RPM_GRIDLINE_VALUES, VALUE_GRIDLINE_VALUES
     RPM_GRIDLINE_VALUES = [i for i in range(0, int(input("what is Max value of RPM Axis? "))+1, 1000)]
-    VALUE_GRIDLINE_VALUES = [i for i in range(int(input("what is Max value of Torque Axis? ")),-1,-100)]
+    VALUE_GRIDLINE_VALUES = [i for i in range(int(input("what is Max value of Torque Axis? ")),-1,-int(input("what is Min value of Torque Axis? ")))]
+    print(RPM_GRIDLINE_VALUES)
+    print(VALUE_GRIDLINE_VALUES)
 
     x_px = find_gridlines(arr, 'x', X_GRIDLINE_DETECT_ROWS, RPM_GRIDLINE_VALUES)
     y_px = find_gridlines(arr, 'y', Y_GRIDLINE_DETECT_COLS, VALUE_GRIDLINE_VALUES)
@@ -297,9 +333,44 @@ def get_dyno_data(image_path: str,
     print("Tracing power curve (red)...")
     red = trace_curve(arr, is_red)
 
+    # EXPERIMENTAL
+    yellow = fill_hidden_gaps(yellow, red)
+
+
     # debug overlay: gridlines + traced curves, so you can eyeball correctness
     overlay = img.copy()
     draw = ImageDraw.Draw(overlay)
+
+
+    h, w, _ = arr.shape
+
+    # X gridline detector: checks this horizontal strip
+    x_lo, x_hi = X_GRIDLINE_DETECT_ROWS
+    draw.rectangle(
+        [(0, x_lo), (w - 1, x_hi - 1)],
+        outline=(255, 255, 0),
+        width=3,
+    )
+
+    # Y gridline detector: checks this vertical strip
+    y_lo, y_hi = Y_GRIDLINE_DETECT_COLS
+    draw.rectangle(
+        [(y_lo, 0), (y_hi - 1, h - 1)],
+        outline=(255, 0, 255),
+        width=3,
+    )
+
+
+
+
+
+
+
+
+
+
+
+
     for px in x_px:
         draw.line([(px, 0), (px, overlay.height)], fill=(0, 200, 255), width=1)
     for px in y_px:
@@ -335,6 +406,8 @@ def get_dyno_data(image_path: str,
           f"lb-ft/HP instead -- if it's neither, something's misdetected)")
 
     print(f"\nSaved debug_crop.png and debug_trace_overlay.png -- check them before trusting this:\n")
+
+    print(f"HP = {power}")
 
     plot_torque_curve(rpms, torque)
 

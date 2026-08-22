@@ -49,17 +49,45 @@ import dyno_chart_extractor
 
 # Gear ratios in order, 1st gear first. No final drive needed (see above).
 
-GEAR_RATIOS = [3.179, 2.445, 1.834, 1.419, 1.113, 0.856, 0.716]
-# Gearbox Name: GSG/A-TRONIC (A/T AWD) / 88KG
-GEAR_RATIOS = [3.207, 2.261, 1.570, 1.124, 0.810, 0.582, 0.486]
+
+# GN:6L90
+GEAR_RATIOS = [3.627, 2.47, 1.683, 1.146, 0.78, 0.737]
+# GN:ZF 5H30
+GEAR_RATIOS = [3.208, 2.191, 1.497, 1.022, 0.75]
+
+# GN:ZF 8HP90
+GEAR_RATIOS = [4.239, 3.129, 2.31, 1.75, 1.325, 1.004, 0.84, 0.737]
 
 
 # one of the best arrangements for civic
 # GEAR_RATIOS = [3.177, 2.443, 1.834, 1.419, 1.163, 0.966, 0.875]
 # FD = 2.585
 
-# first_gear_ratio * FD <= 9.45
-# last__gear_ratio * FD >= 4.3
+# GN:ZF 4HP22  ===================    popularuli gearboxi (default)
+GEAR_RATIOS = [2.48, 1.48, 1, 0.73] 
+
+# GN:ZF 4HP22  ===================    popularuli gearboxi (tuned, minimized drops) === 1.424 drop
+GEAR_RATIOS = [2.232, 1.566, 1.1, 0.772] 
+
+# GN:ZF 4HP22  ===================    popularuli gearboxi (tuned, minimized dros + 3->4 1.369)
+GEAR_RATIOS = [2.232, 1.566, 1.1, 0.803] 
+
+# GN:6ASG AT RWD / 78 === 1.289 drop (second place, but rwd)
+GEAR_RATIOS = [2.908, 2.255, 1.748, 1.356, 1.051, 0.815]
+
+# Civic_b16 ========= Gearbox Name: GSG/A-TRONIC (A/T AWD) / 88KG
+GEAR_RATIOS = [3.207, 2.261, 1.570, 1.124, 0.810, 0.582, 0.486]
+FD = "max number"
+
+# Dodge charger ===== GN: KLST (A/T AWD) / 75
+# GEAR_RATIOS = [4.248, 3.429, 2.947, 2.475, 1.737, 1.25,  1.737, 1.37]
+GEAR_RATIOS = [4.248, 3.404, 2.728, 2.187, 1.752, 1.404, 1.126, 0.902, 0.723]  # seems to be best, why i am not using
+
+# GN:ZF 5HP30 AT RWD === 1.4638 drop
+GEAR_RATIOS = [3.208, 2.191, 1.497, 1.022, 0.75]
+
+# Dodge charger ===== GN: 7 DSG AT AWD / 92  ===================================== best GEAR RATIOS  === 1.263 drop
+GEAR_RATIOS = [2.858, 2.263, 1.792, 1.419, 1.123, 0.889, 0.716]
 
 
 IMAGE_PATH = dyno_chart_extractor.IMAGE_PATH
@@ -94,7 +122,7 @@ DYNO_RPM, DYNO_TORQUE = dyno_chart_extractor.get_dyno_data(IMAGE_PATH)
 
 
 # REDLINE_RPM = DYNO_RPM[-1]   # top of the search range
-REDLINE_RPM = DYNO_RPM[-4]
+REDLINE_RPM = DYNO_RPM[-2]
 MIN_RPM     = 2000   # bottom of the search range (idle / lowest usable RPM)
 
 SHOW_PLOT = True
@@ -139,7 +167,6 @@ def find_shift_rpm(ratio_a, ratio_b, lo, hi, steps=4000):
 
     # return crossings, vals[-1]
     return crossings, float(np.sign(vals[-1]))  # if it does not work, uncomment prev line
-
 
 
 def plot_wheel_torque_curves(shift_points):
@@ -191,7 +218,7 @@ def main():
 
         if not crossings:
             if end_diff > 0:
-                print(f"{label:<10}{'redline':<14}(gear {i+1} stays ahead all the way -- shift at redline)")
+                print(f"{label:<10}{'redline':<14}=(gear {i+1} stays ahead all the way -- shift at redline={REDLINE_RPM})")
                 shift_points.append((REDLINE_RPM, ratio_a))
             else:
                 print(f"{label:<10}{MIN_RPM:<14}(gear {i+2} is already ahead from {MIN_RPM} RPM -- shift ASAP)")
