@@ -165,6 +165,7 @@ def find_shift_rpm(ratio_a, ratio_b, lo, hi, steps=4000):
             r0, r1 = scan[i], scan[i + 1]
             crossings.append(r0 + (r1 - r0) * (-v0) / (v1 - v0))
 
+    # added comment here on 168th line
     # return crossings, vals[-1]
     return crossings, float(np.sign(vals[-1]))  # if it does not work, uncomment prev line
 
