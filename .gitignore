@@ -1,8 +1,10 @@
 __pycache__/
 *.pyc
+.venv/
 debug_*.png
 debug_crop.png
 debug_trace_overlay.png
 shift_curves.png
 torque_curve.png
+screenshots/
 
