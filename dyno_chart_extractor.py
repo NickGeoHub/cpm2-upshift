@@ -78,7 +78,7 @@ from pathlib import Path
 
 
 
-IMAGE_PATH = "5569.jpg"
+IMAGE_PATH = "screenshots/b16.jpg"
 
 # Pixel box (left, top, right, bottom), in the ORIGINAL screenshot, that
 # crops down to just the axes + plot area -- cut out the RPM readout,

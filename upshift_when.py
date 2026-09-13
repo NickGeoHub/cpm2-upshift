@@ -79,15 +79,41 @@ GEAR_RATIOS = [2.908, 2.255, 1.748, 1.356, 1.051, 0.815]
 GEAR_RATIOS = [3.207, 2.261, 1.570, 1.124, 0.810, 0.582, 0.486]
 FD = "max number"
 
-# Dodge charger ===== GN: KLST (A/T AWD) / 75
-# GEAR_RATIOS = [4.248, 3.429, 2.947, 2.475, 1.737, 1.25,  1.737, 1.37]
-GEAR_RATIOS = [4.248, 3.404, 2.728, 2.187, 1.752, 1.404, 1.126, 0.902, 0.723]  # seems to be best, why i am not using
-
-# GN:ZF 5HP30 AT RWD === 1.4638 drop
-GEAR_RATIOS = [3.208, 2.191, 1.497, 1.022, 0.75]
-
 # Dodge charger ===== GN: 7 DSG AT AWD / 92  ===================================== best GEAR RATIOS  === 1.263 drop
 GEAR_RATIOS = [2.858, 2.263, 1.792, 1.419, 1.123, 0.889, 0.716]
+
+# GN:SMG III 247 A/T RWD (default settings)
+GEAR_RATIOS = [3.985, 2.652, 1.806, 1.392, 1.159, 1, 0.83]
+
+# strange gearbox
+GEAR_RATIOS = [4.74, 2.963, 1.923, 1.527, 1.175, 0.907, 0.761, 0.606]
+FD = 2.42
+# 2.42*4.74 =
+
+# experiment gears.py script 6.09.26
+GEAR_RATIOS = [2.858, 2.061, 1.662, 1.379, 1.163]
+
+# GN:7S TRONIC DCT AWD _ for bmw e60, FD = 2.61
+GEAR_RATIOS = [3.933, 2.725, 2.076, 1.625, 1.293, 1.04]
+
+# GN: 7 DSG DCT AWD --- new formula lol
+GEAR_RATIOS = [2.858, 2.066, 1.656, 1.364, 1.142, 0.966, 0.815]
+
+# GN:7DLC750 V1 DCT RWD --- best RWD tune fr alpha=0.8
+GEAR_RATIOS = [2.769, 2.051, 1.63, 1.325, 1.092, 0.909, 0.762]
+
+
+# GN:FMM19 A/T RWD --- F1 gearbox alpha=0.82
+GEAR_RATIOS = [3.5, 2.709, 2.227, 1.863, 1.576, 1.342, 1.15, 0.99]
+
+# GN: formula1-is zf-hp ragaca
+GEAR_RATIOS = [2.231, 1.458, 1.064, 0.801]
+
+# GN:FMM91 A/T RWD --- F1 gearbox alpha=0.8
+GEAR_RATIOS = [2.835, 2.337, 2.025, 1.781, 1.579, 1.408]
+
+# experiment andrias supercar max speed --- GN:7DLC750 V1 DCT RWD ---
+GEAR_RATIOS = [2.769, 1.97, 1.518, 1.197, 0.958, 0.774, 0.63]
 
 
 IMAGE_PATH = dyno_chart_extractor.IMAGE_PATH
@@ -212,14 +238,31 @@ def main():
 
     shift_points = []  # (shift_rpm, ratio_a) pairs, for the optional plot
 
-    for i in range(len(GEAR_RATIOS) - 1):
-        ratio_a, ratio_b = GEAR_RATIOS[i], GEAR_RATIOS[i + 1]
+    for i in range(len(GEAR_RATIOS)):
+        if i == len(GEAR_RATIOS) - 1:
+            # we are calculating imaginary gear ratio
+            # experiment imaginary gear
+
+            # last gear
+            ratio_a = GEAR_RATIOS[i]
+            # previous gear ratio jump (n/n+1)
+            gear_jump = GEAR_RATIOS[i-1] / GEAR_RATIOS[i]
+            # average that jump with 1.0
+            ratio_difference = (gear_jump + 1.0) / 2.0
+            # imaginary gear
+            ratio_b = ratio_a / ratio_difference
+            label = f"{i+1} -> #{i+2}#"
+
+        else:
+            ratio_a, ratio_b = GEAR_RATIOS[i], GEAR_RATIOS[i + 1]
+            ratio_difference = ratio_a/ratio_b
+            label = f"{i+1} -> {i+2}"
+
         crossings, end_diff = find_shift_rpm(ratio_a, ratio_b, MIN_RPM, REDLINE_RPM)
-        label = f"{i+1} -> {i+2}"
 
         if not crossings:
             if end_diff > 0:
-                print(f"{label:<10}{'redline':<14}=(gear {i+1} stays ahead all the way -- shift at redline={REDLINE_RPM})")
+                print(f"{label:<10}{'redline':<14}=(gear {i+1} stays ahead all the way -- shift at redline={REDLINE_RPM})  ratio_diff={ratio_difference :<14.3f}")
                 shift_points.append((REDLINE_RPM, ratio_a))
             else:
                 print(f"{label:<10}{MIN_RPM:<14}(gear {i+2} is already ahead from {MIN_RPM} RPM -- shift ASAP)")
@@ -228,8 +271,7 @@ def main():
 
         shift_rpm = crossings[-1]
         landing_rpm = shift_rpm * (ratio_b / ratio_a)
-        rato_difference = ratio_a/ratio_b
-        print(f"{label:<10}{shift_rpm:<14.0f}{landing_rpm:<14.0f}{rato_difference:<14.3f}")
+        print(f"{label:<10}{shift_rpm:<14.0f}{landing_rpm:<14.0f}{ratio_difference:<14.3f}")
         shift_points.append((shift_rpm, ratio_a))
 
         if len(crossings) > 1:
