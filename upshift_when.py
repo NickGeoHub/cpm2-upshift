@@ -112,6 +112,9 @@ GEAR_RATIOS = [2.231, 1.458, 1.064, 0.801]
 # GN:FMM91 A/T RWD --- F1 gearbox alpha=0.8
 GEAR_RATIOS = [2.835, 2.337, 2.025, 1.781, 1.579, 1.408]
 
+# GN:7 DSG/S DCT 4WD  ---- 4wd best, lowest final
+GEAR_RATIOS = [3.323, 2.241, 1.673, 1.286, 1.006, 0.796, 0.636]
+
 # experiment andrias supercar max speed --- GN:7DLC750 V1 DCT RWD ---
 GEAR_RATIOS = [2.769, 1.97, 1.518, 1.197, 0.958, 0.774, 0.63]
 
