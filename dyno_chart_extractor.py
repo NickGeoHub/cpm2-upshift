@@ -111,21 +111,21 @@ SAMPLE_STEP_RPM = 100     # how finely to sample the traced curves
 MAX_GAP_PX = 10           # a bigger gap than this = stop trusting that curve past it
 
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Extract RPM/torque/power data from a CPM2 dyno chart screenshot.")
+    parser.add_argument("-f", "--file", default=IMAGE_PATH,
+                        help="path to the dyno screenshot (default: %(default)s)")
+    parser.add_argument("--crop", nargs=4, type=int, metavar=("LEFT", "TOP", "RIGHT", "BOTTOM"),
+                        default=list(CROP_BOX),
+                        help="pixel box around the chart (default: %(default)s)")
+    parser.add_argument("--step", type=int, default=SAMPLE_STEP_RPM,
+                        help="RPM step between sampled points (default: %(default)s)")
+    args = parser.parse_args()
 
-parser = argparse.ArgumentParser(description="Extract RPM/torque/power data from a CPM2 dyno chart screenshot.")
-parser.add_argument("-f", "--file", default=IMAGE_PATH,
-                     help="path to the dyno screenshot (default: %(default)s)")
-parser.add_argument("--crop", nargs=4, type=int, metavar=("LEFT", "TOP", "RIGHT", "BOTTOM"),
-                     default=list(CROP_BOX),
-                     help="pixel box around the chart (default: %(default)s)")
-parser.add_argument("--step", type=int, default=SAMPLE_STEP_RPM,
-                     help="RPM step between sampled points (default: %(default)s)")
-args = parser.parse_args()
 
-
-IMAGE_PATH = args.file
-CROP_BOX = tuple(args.crop)
-SAMPLE_STEP_RPM = args.step
+    IMAGE_PATH = args.file
+    CROP_BOX = tuple(args.crop)
+    SAMPLE_STEP_RPM = args.step
 
 
 # ============================================================

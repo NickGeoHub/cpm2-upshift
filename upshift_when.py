@@ -41,6 +41,7 @@ import numpy as np
 # import matplotlib.pyplot as plt
 
 import dyno_chart_extractor
+import ratios
 
 
 # ============================================================
@@ -50,94 +51,35 @@ import dyno_chart_extractor
 # Gear ratios in order, 1st gear first. No final drive needed (see above).
 
 
-# GN:6L90
-GEAR_RATIOS = [3.627, 2.47, 1.683, 1.146, 0.78, 0.737]
-# GN:ZF 5H30
-GEAR_RATIOS = [3.208, 2.191, 1.497, 1.022, 0.75]
 
-# GN:ZF 8HP90
-GEAR_RATIOS = [4.239, 3.129, 2.31, 1.75, 1.325, 1.004, 0.84, 0.737]
+if __name__ == "__main__":
+    # TODO it might be buggy if imported from another file so be carreful
+    IMAGE_PATH = dyno_chart_extractor.IMAGE_PATH
+    CROP_BOX = dyno_chart_extractor.CROP_BOX
+    SAMPLE_STEP_RPM = dyno_chart_extractor.SAMPLE_STEP_RPM
 
+    parser = argparse.ArgumentParser(description="Calculate best upshift RPMs for each gear, when gear ratios, and dyno data are given")
+    parser.add_argument("-f", "--file", default=IMAGE_PATH,
+                        help="path to the dyno screenshot (default: %(default)s)")
+    parser.add_argument("-g", "--gearbox", default="SCRIPT_ASKS",
+                        choices=list(ratios.GEARBOXES.keys()),
+                        help="which gearbox to use (default: %(default)s)")
+    parser.add_argument("--crop", nargs=4, type=int, metavar=("LEFT", "TOP", "RIGHT", "BOTTOM"),
+                        default=list(CROP_BOX),
+                        help="pixel box around the chart (default: %(default)s)")
+    parser.add_argument("--step", type=int, default=SAMPLE_STEP_RPM,
+                        help="RPM step between sampled points (default: %(default)s)")
+    args = parser.parse_args()
 
-# one of the best arrangements for civic
-# GEAR_RATIOS = [3.177, 2.443, 1.834, 1.419, 1.163, 0.966, 0.875]
-# FD = 2.585
-
-# GN:ZF 4HP22  ===================    popularuli gearboxi (default)
-GEAR_RATIOS = [2.48, 1.48, 1, 0.73] 
-
-# GN:ZF 4HP22  ===================    popularuli gearboxi (tuned, minimized drops) === 1.424 drop
-GEAR_RATIOS = [2.232, 1.566, 1.1, 0.772] 
-
-# GN:ZF 4HP22  ===================    popularuli gearboxi (tuned, minimized dros + 3->4 1.369)
-GEAR_RATIOS = [2.232, 1.566, 1.1, 0.803] 
-
-# GN:6ASG AT RWD / 78 === 1.289 drop (second place, but rwd)
-GEAR_RATIOS = [2.908, 2.255, 1.748, 1.356, 1.051, 0.815]
-
-# Civic_b16 ========= Gearbox Name: GSG/A-TRONIC (A/T AWD) / 88KG
-GEAR_RATIOS = [3.207, 2.261, 1.570, 1.124, 0.810, 0.582, 0.486]
-FD = "max number"
-
-# Dodge charger ===== GN: 7 DSG AT AWD / 92  ===================================== best GEAR RATIOS  === 1.263 drop
-GEAR_RATIOS = [2.858, 2.263, 1.792, 1.419, 1.123, 0.889, 0.716]
-
-# GN:SMG III 247 A/T RWD (default settings)
-GEAR_RATIOS = [3.985, 2.652, 1.806, 1.392, 1.159, 1, 0.83]
-
-# strange gearbox
-GEAR_RATIOS = [4.74, 2.963, 1.923, 1.527, 1.175, 0.907, 0.761, 0.606]
-FD = 2.42
-# 2.42*4.74 =
-
-# experiment gears.py script 6.09.26
-GEAR_RATIOS = [2.858, 2.061, 1.662, 1.379, 1.163]
-
-# GN:7S TRONIC DCT AWD _ for bmw e60, FD = 2.61
-GEAR_RATIOS = [3.933, 2.725, 2.076, 1.625, 1.293, 1.04]
-
-# GN: 7 DSG DCT AWD --- new formula lol
-GEAR_RATIOS = [2.858, 2.066, 1.656, 1.364, 1.142, 0.966, 0.815]
-
-# GN:7DLC750 V1 DCT RWD --- best RWD tune fr alpha=0.8
-GEAR_RATIOS = [2.769, 2.051, 1.63, 1.325, 1.092, 0.909, 0.762]
+    IMAGE_PATH = args.file
+    CROP_BOX = tuple(args.crop)
+    SAMPLE_STEP_RPM = args.step
 
 
-# GN:FMM19 A/T RWD --- F1 gearbox alpha=0.82
-GEAR_RATIOS = [3.5, 2.709, 2.227, 1.863, 1.576, 1.342, 1.15, 0.99]
-
-# GN: formula1-is zf-hp ragaca
-GEAR_RATIOS = [2.231, 1.458, 1.064, 0.801]
-
-# GN:FMM91 A/T RWD --- F1 gearbox alpha=0.8
-GEAR_RATIOS = [2.835, 2.337, 2.025, 1.781, 1.579, 1.408]
-
-# GN:7 DSG/S DCT 4WD  ---- 4wd best, lowest final
-GEAR_RATIOS = [3.323, 2.241, 1.673, 1.286, 1.006, 0.796, 0.636]
-
-# experiment andrias supercar max speed --- GN:7DLC750 V1 DCT RWD ---
-GEAR_RATIOS = [2.769, 1.97, 1.518, 1.197, 0.958, 0.774, 0.63]
-
-
-IMAGE_PATH = dyno_chart_extractor.IMAGE_PATH
-CROP_BOX = dyno_chart_extractor.CROP_BOX
-SAMPLE_STEP_RPM = dyno_chart_extractor.SAMPLE_STEP_RPM
-
-
-parser = argparse.ArgumentParser(description="Calculate best upshift RPMs for each gear, when gear ratios, and dyno data are given")
-parser.add_argument("-f", "--file", default=IMAGE_PATH,
-                     help="path to the dyno screenshot (default: %(default)s)")
-parser.add_argument("--crop", nargs=4, type=int, metavar=("LEFT", "TOP", "RIGHT", "BOTTOM"),
-                     default=list(CROP_BOX),
-                     help="pixel box around the chart (default: %(default)s)")
-parser.add_argument("--step", type=int, default=SAMPLE_STEP_RPM,
-                     help="RPM step between sampled points (default: %(default)s)")
-args = parser.parse_args()
-
-
-IMAGE_PATH = args.file
-CROP_BOX = tuple(args.crop)
-SAMPLE_STEP_RPM = args.step
+if args.gearbox == "SCRIPT_ASKS":
+    GN, GEAR_RATIOS = ratios.ask_gearbox()
+else:
+    GN, GEAR_RATIOS = ratios.GEARBOXES[args.gearbox]
 
 
 
