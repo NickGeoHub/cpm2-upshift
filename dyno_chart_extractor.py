@@ -76,9 +76,9 @@ from pathlib import Path
 # EDIT THESE per screenshot
 # ============================================================
 
-
-
-IMAGE_PATH = "screenshots/b16.jpg"
+# set this true to automate gridlines input.  set False if something wont work and input gridlines some graph info manualy
+EXPERIMENTAL_GRIDLINES = True
+# EXPERIMENTAL_GRIDLINES = False
 
 # Pixel box (left, top, right, bottom), in the ORIGINAL screenshot, that
 # crops down to just the axes + plot area -- cut out the RPM readout,
@@ -109,6 +109,8 @@ Y_GRIDLINE_DETECT_COLS = (110, 140)
 
 SAMPLE_STEP_RPM = 100     # how finely to sample the traced curves
 MAX_GAP_PX = 10           # a bigger gap than this = stop trusting that curve past it
+
+IMAGE_PATH = "screenshots/b16.jpg"
 
 
 if __name__ == "__main__":
@@ -163,7 +165,7 @@ def is_red(r, g, b):      # power curve
     return r > 140 and (r - g) > 55
 
 
-def find_gridlines(arr, axis, band, expected_values):
+def find_gridlines(arr, axis, band, expected_values: None|list):
     """axis='x': detect vertical gridlines -> pixel column per RPM value.
     axis='y': detect horizontal gridlines -> pixel row per data value.
     `band` is the curve-free pixel range on the OTHER axis to scan."""
@@ -192,17 +194,18 @@ def find_gridlines(arr, axis, band, expected_values):
     clusters.append(sum(cur) / len(cur))
 
 
-
-    if len(clusters) != len(expected_values):
-        print("clusters:", clusters)
-        print("cluster count:", len(clusters))
-        print("expected count:", len(expected_values))
-        raise RuntimeError(
-            f"Found {len(clusters)} {axis}-axis gridlines but expected {len(expected_values)} "
-            f"(from {'RPM' if axis == 'x' else 'VALUE'}_GRIDLINE_VALUES). Check debug_crop.png "
-            f"-- likely CROP_BOX is off, or a curve is crossing through the detect band "
-            f"({'X_GRIDLINE_DETECT_ROWS' if axis == 'x' else 'Y_GRIDLINE_DETECT_COLS'})."
-        )
+    if expected_values is not None:
+        if len(clusters) != len(expected_values):
+            print("clusters:", clusters)
+            print("cluster count:", len(clusters))
+            print("expected count:", len(expected_values))
+            raise RuntimeError(
+                f"Found {len(clusters)} {axis}-axis gridlines but expected {len(expected_values)} "
+                f"(from {'RPM' if axis == 'x' else 'VALUE'}_GRIDLINE_VALUES). Check debug_crop.png "
+                f"-- likely CROP_BOX is off, or a curve is crossing through the detect band "
+                f"({'X_GRIDLINE_DETECT_ROWS' if axis == 'x' else 'Y_GRIDLINE_DETECT_COLS'})."
+                # TODO add more useful logs here suggesting changing inputed torque/rpm data or modifying experimental gridlines variable.
+            )
     return clusters
 
 
@@ -307,22 +310,32 @@ def get_dyno_data(image_path: str,
     img.save(crop_path.resolve())
     arr = np.array(img).astype(int)
 
-    open_file_cross_platform(crop_path)
     global RPM_GRIDLINE_VALUES, VALUE_GRIDLINE_VALUES
-    max_rpm_inputed = input("what is Max value of RPM Axis? ")
-    max_tq_inputed = input("what is Max value of Torque Axis? ")
-    if max_tq_inputed == "":
-        max_tq_inputed = 10_000
-        min_tq_inputed = 1_000
+
+    if EXPERIMENTAL_GRIDLINES:
+        RPM_GRIDLINE_VALUES = None
+        VALUE_GRIDLINE_VALUES = None
     else:
-        min_tq_inputed = input("what is Min value of Torque Axis? ")
-    RPM_GRIDLINE_VALUES = [i for i in range(0, int(max_rpm_inputed)+1, 1000)]
-    VALUE_GRIDLINE_VALUES = [i for i in range(max_tq_inputed,-1,-int(min_tq_inputed))]
-    print(RPM_GRIDLINE_VALUES)
-    print(VALUE_GRIDLINE_VALUES)
+        open_file_cross_platform(crop_path)
+        max_rpm_inputed = input("what is Max value of RPM Axis? ")
+        max_tq_inputed = input("what is Max value of Torque Axis? ")
+        if max_tq_inputed == "":
+            max_tq_inputed = 10_000
+            min_tq_inputed = 1_000
+        else:
+            min_tq_inputed = input("what is Min value of Torque Axis? ")
+        RPM_GRIDLINE_VALUES = [i for i in range(0, int(max_rpm_inputed)+1, 1000)]
+        VALUE_GRIDLINE_VALUES = [i for i in range(int(max_tq_inputed),-1,-int(min_tq_inputed))]
+        # print(RPM_GRIDLINE_VALUES)  # debug
+        # print(VALUE_GRIDLINE_VALUES)
+
 
     x_px = find_gridlines(arr, 'x', X_GRIDLINE_DETECT_ROWS, RPM_GRIDLINE_VALUES)
     y_px = find_gridlines(arr, 'y', Y_GRIDLINE_DETECT_COLS, VALUE_GRIDLINE_VALUES)
+
+    if EXPERIMENTAL_GRIDLINES:
+        RPM_GRIDLINE_VALUES = [i*1000 for i in range(len(x_px))]    
+        VALUE_GRIDLINE_VALUES = [i*100 for i in range(len(y_px), 0, -1)]
     mx, cx = np.polyfit(RPM_GRIDLINE_VALUES, x_px, 1)
     my, cy = np.polyfit(VALUE_GRIDLINE_VALUES, y_px, 1)
 
@@ -406,15 +419,16 @@ def get_dyno_data(image_path: str,
     torque = [round(sample(r, yx, yy)) for r in rpms]
     power = [round(sample(r, rx, ry)) for r in rpms]
 
+    """ because of some experimented automations, this sanity check does not work correctly so i comment it.
+
     ratios = [p / (t * r) for r, t, p in zip(rpms, torque, power) if t > 20]
     implied_constant = 1 / (sum(ratios) / len(ratios))
     print(f"\nSanity check: implied torque/power constant = {implied_constant:.0f} "
           f"(~7127 confirms yellow=torque Nm / red=power PS; ~5252 would mean "
           f"lb-ft/HP instead -- if it's neither, something's misdetected)")
 
+    """
     print(f"\nSaved debug_crop.png and debug_trace_overlay.png -- check them before trusting this:\n")
-
-    print(f"HP = {power}")
 
     plot_torque_curve(rpms, torque)
 

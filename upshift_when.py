@@ -52,7 +52,6 @@ import files
 # Gear ratios in order, 1st gear first. No final drive needed (see above).
 
 
-
 if __name__ == "__main__":
     # TODO it might be buggy if imported from another file so be carreful
     CROP_BOX = dyno_chart_extractor.CROP_BOX
