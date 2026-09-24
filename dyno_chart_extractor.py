@@ -380,17 +380,6 @@ def get_dyno_data(image_path: str,
         width=3,
     )
 
-
-
-
-
-
-
-
-
-
-
-
     for px in x_px:
         draw.line([(px, 0), (px, overlay.height)], fill=(0, 200, 255), width=1)
     for px in y_px:
