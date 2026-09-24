@@ -37,6 +37,9 @@ GEARBOXES = {
 
     "klst AWD": ("i am not using it.",
              [4.248, 3.404, 2.728, 2.187, 1.752, 1.404, 1.126, 0.902, 0.723]),
+
+    "7S TRONIC DCT/AWD": ("6 gear AWD",
+                          [3.933, 2.64, 1.964, 1.505, 1.174, 0.927])
 }
 
 
@@ -58,7 +61,7 @@ def ask_gearbox(message: str="Pick any gearbox!",
     if list_them:
         for i, (name, (description, g_ratios)) in enumerate(GEARBOXES.items()):
             # print(f"i={i}, name={name}, description={description}, gear_ratios={g_ratios}")
-            print(f"{str(i).rjust(5)}) {name.ljust(17)}; {description.ljust(50)}, GEAR_RATIOS={g_ratios}")
+            print(f"{str(i).rjust(3)}) {name.ljust(20)}| {description.ljust(45)}| {g_ratios}")
 
     if command is None:
         ans = input("pick any number: ")

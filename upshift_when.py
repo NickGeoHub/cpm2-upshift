@@ -42,6 +42,7 @@ import numpy as np
 
 import dyno_chart_extractor
 import ratios
+import files
 
 
 # ============================================================
@@ -54,12 +55,11 @@ import ratios
 
 if __name__ == "__main__":
     # TODO it might be buggy if imported from another file so be carreful
-    IMAGE_PATH = dyno_chart_extractor.IMAGE_PATH
     CROP_BOX = dyno_chart_extractor.CROP_BOX
     SAMPLE_STEP_RPM = dyno_chart_extractor.SAMPLE_STEP_RPM
 
     parser = argparse.ArgumentParser(description="Calculate best upshift RPMs for each gear, when gear ratios, and dyno data are given")
-    parser.add_argument("-f", "--file", default=IMAGE_PATH,
+    parser.add_argument("-f", "--file", default="SCRIPT_ASKS",
                         help="path to the dyno screenshot (default: %(default)s)")
     parser.add_argument("-g", "--gearbox", default="SCRIPT_ASKS",
                         choices=list(ratios.GEARBOXES.keys()),
@@ -71,10 +71,15 @@ if __name__ == "__main__":
                         help="RPM step between sampled points (default: %(default)s)")
     args = parser.parse_args()
 
-    IMAGE_PATH = args.file
     CROP_BOX = tuple(args.crop)
     SAMPLE_STEP_RPM = args.step
 
+# should it be in if __name__ == ...... block?
+if args.file == "SCRIPT_ASKS":
+    # interactive mode
+    IMAGE_PATH = files.pick_file_interactively()
+else:
+    IMAGE_PATH = args.file
 
 if args.gearbox == "SCRIPT_ASKS":
     GN, GEAR_RATIOS = ratios.ask_gearbox()
@@ -87,7 +92,6 @@ else:
 # Units don't matter (Nm or lb-ft) as long as they're consistent --
 # the math only ever compares torque values to each other.
 
-# that is for my napovni manqana
 
 DYNO_RPM, DYNO_TORQUE = dyno_chart_extractor.get_dyno_data(IMAGE_PATH)
 

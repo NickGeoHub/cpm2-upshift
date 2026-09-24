@@ -309,8 +309,15 @@ def get_dyno_data(image_path: str,
 
     open_file_cross_platform(crop_path)
     global RPM_GRIDLINE_VALUES, VALUE_GRIDLINE_VALUES
-    RPM_GRIDLINE_VALUES = [i for i in range(0, int(input("what is Max value of RPM Axis? "))+1, 1000)]
-    VALUE_GRIDLINE_VALUES = [i for i in range(int(input("what is Max value of Torque Axis? ")),-1,-int(input("what is Min value of Torque Axis? ")))]
+    max_rpm_inputed = input("what is Max value of RPM Axis? ")
+    max_tq_inputed = input("what is Max value of Torque Axis? ")
+    if max_tq_inputed == "":
+        max_tq_inputed = 10_000
+        min_tq_inputed = 1_000
+    else:
+        min_tq_inputed = input("what is Min value of Torque Axis? ")
+    RPM_GRIDLINE_VALUES = [i for i in range(0, int(max_rpm_inputed)+1, 1000)]
+    VALUE_GRIDLINE_VALUES = [i for i in range(max_tq_inputed,-1,-int(min_tq_inputed))]
     print(RPM_GRIDLINE_VALUES)
     print(VALUE_GRIDLINE_VALUES)
 

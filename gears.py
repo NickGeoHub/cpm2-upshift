@@ -55,13 +55,13 @@ if __name__ == "__main__":
     # 0.9 setting --> each lands slightly lower rmp
     # 0.6 setting --> first lands far low rpm, then idk why but i get almost consistent lands...
     # i think 0.8 should be best setting.
-    alpha = 0.75
+    alpha = 0.8
 
     # STARTS HERE /.,mnbvcvbnm,./.,mnbvcvbnm,./.,mnbvcvbnm,./.,mnbvvbnm,./
-    R_max = 3.323
-    R_min = 1.006
-    N = 5
-    extra_gear = 2
+    R_max = 3.933
+    R_min = 0.927
+    N = 6
+    extra_gear = 0
 
     GEAR_RATIOS = [i for i in generate_ratios(R_max=R_max, R_min=R_min, N=N, alpha=alpha, extra_gear=extra_gear)]
     print_gears(GEAR_RATIOS)
